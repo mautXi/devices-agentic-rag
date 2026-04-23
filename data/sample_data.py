@@ -1,0 +1,151 @@
+"""
+Sample data for the measuring devices RAG system.
+"""
+
+DEVICES = [
+    {
+        "id": "dev_001",
+        "name": "Fluke 87V Multimeter",
+        "description": "Industrial digital multimeter for measuring AC/DC voltage, current, resistance, capacitance, temperature, and frequency. Designed for electricians and industrial technicians.",
+        "category": "multimeter",
+        "use_case": "Electrical diagnostics, troubleshooting circuits, industrial maintenance",
+    },
+    {
+        "id": "dev_002",
+        "name": "Keysight DSOX1204G Oscilloscope",
+        "description": "4-channel 70 MHz digital storage oscilloscope with integrated waveform generator. Used for visualizing and analyzing electronic signals over time.",
+        "category": "oscilloscope",
+        "use_case": "Signal analysis, electronics development, waveform debugging",
+    },
+    {
+        "id": "dev_003",
+        "name": "Tektronix TDS2024C Oscilloscope",
+        "description": "4-channel 200 MHz digital storage oscilloscope with USB connectivity. Suitable for education, research, and general-purpose electronics testing.",
+        "category": "oscilloscope",
+        "use_case": "General electronics testing, education, research",
+    },
+    {
+        "id": "dev_004",
+        "name": "Rohde & Schwarz RTB2004 Oscilloscope",
+        "description": "4-channel 300 MHz oscilloscope with integrated logic analyzer and protocol decoder. High-end device for professional embedded systems development.",
+        "category": "oscilloscope",
+        "use_case": "Embedded systems, protocol analysis, professional R&D",
+    },
+    {
+        "id": "dev_005",
+        "name": "Rigol DG1062Z Function Generator",
+        "description": "2-channel arbitrary waveform function generator with 60 MHz bandwidth. Generates sine, square, ramp, pulse, and arbitrary waveforms.",
+        "category": "function_generator",
+        "use_case": "Signal generation, circuit testing, frequency sweep testing",
+    },
+    {
+        "id": "dev_006",
+        "name": "Keysight E3631A Power Supply",
+        "description": "Triple-output bench DC power supply providing 0–6V/5A and dual 0–25V/1A outputs. Used to power circuits during development and testing.",
+        "category": "power_supply",
+        "use_case": "Bench power for prototyping, circuit biasing, lab experiments",
+    },
+    {
+        "id": "dev_007",
+        "name": "Fluke 1507 Insulation Tester",
+        "description": "Digital insulation resistance tester for testing cables, motors, and transformers up to 10 GΩ at test voltages from 50V to 1000V.",
+        "category": "insulation_tester",
+        "use_case": "Cable testing, motor winding inspection, transformer maintenance",
+    },
+    {
+        "id": "dev_008",
+        "name": "Rohde & Schwarz FSW Signal Analyzer",
+        "description": "High-performance signal and spectrum analyzer covering 2 Hz to 85 GHz. Used for RF and microwave signal characterization.",
+        "category": "spectrum_analyzer",
+        "use_case": "RF testing, spectrum monitoring, radar development",
+    },
+    {
+        "id": "dev_009",
+        "name": "National Instruments PXIe-4080 DMM",
+        "description": "High-accuracy 6.5-digit digital multimeter in PXI form factor. Offers precision measurements for automated test systems.",
+        "category": "multimeter",
+        "use_case": "Automated test systems, precision measurement, ATE integration",
+    },
+    {
+        "id": "dev_010",
+        "name": "Hioki PW3390 Power Analyzer",
+        "description": "High-precision power analyzer for measuring power consumption of motors, inverters, and power electronics up to 1000V/65A.",
+        "category": "power_analyzer",
+        "use_case": "Energy efficiency testing, motor analysis, inverter characterization",
+    },
+]
+
+# Components used in measuring devices
+# Each component links to device IDs via "used_in"
+COMPONENTS = [
+    {
+        "id": "comp_001",
+        "name": "ADC (Analog-to-Digital Converter)",
+        "description": "Converts continuous analog signals into discrete digital values. Core component for digitizing measured signals in instruments.",
+        "manufacturer": "Texas Instruments",
+        "used_in": ["dev_001", "dev_002", "dev_003", "dev_004", "dev_009", "dev_010"],
+    },
+    {
+        "id": "comp_002",
+        "name": "FPGA (Field-Programmable Gate Array)",
+        "description": "Reconfigurable integrated circuit used for high-speed signal processing, triggering logic, and real-time waveform analysis in oscilloscopes.",
+        "manufacturer": "Xilinx (AMD)",
+        "used_in": ["dev_002", "dev_003", "dev_004", "dev_008"],
+    },
+    {
+        "id": "comp_003",
+        "name": "High-Voltage Isolation Amplifier",
+        "description": "Provides galvanic isolation between high-voltage measurement inputs and low-voltage digital circuitry to protect users and electronics.",
+        "manufacturer": "Analog Devices",
+        "used_in": ["dev_001", "dev_007", "dev_010"],
+    },
+    {
+        "id": "comp_004",
+        "name": "DDS (Direct Digital Synthesis) Chip",
+        "description": "Generates precise analog waveforms from digital data using a numerically controlled oscillator. Core of function/arbitrary waveform generators.",
+        "manufacturer": "Analog Devices",
+        "used_in": ["dev_005"],
+    },
+    {
+        "id": "comp_005",
+        "name": "Linear Voltage Regulator",
+        "description": "Maintains a constant output voltage regardless of load variations. Used in power supply outputs and internal power rails.",
+        "manufacturer": "Linear Technology (Analog Devices)",
+        "used_in": ["dev_006"],
+    },
+    {
+        "id": "comp_006",
+        "name": "High-Speed Comparator",
+        "description": "Compares two voltages and outputs a digital signal indicating which is larger. Used in triggering circuits of oscilloscopes.",
+        "manufacturer": "Maxim Integrated (Analog Devices)",
+        "used_in": ["dev_002", "dev_003", "dev_004"],
+    },
+    {
+        "id": "comp_007",
+        "name": "RF Mixer",
+        "description": "Shifts signal frequencies by combining two signals. Essential in spectrum analyzers and signal analyzers for frequency down-conversion.",
+        "manufacturer": "Mini-Circuits",
+        "used_in": ["dev_008"],
+    },
+    {
+        "id": "comp_008",
+        "name": "Current Shunt Resistor",
+        "description": "Precision low-resistance resistor used to measure current by sampling the voltage drop across it.",
+        "manufacturer": "Vishay",
+        "used_in": ["dev_001", "dev_006", "dev_009", "dev_010"],
+    },
+    {
+        "id": "comp_009",
+        "name": "TCXO (Temperature-Compensated Crystal Oscillator)",
+        "description": "Provides a stable reference clock frequency over a wide temperature range. Ensures timing accuracy in measurement instruments.",
+        "manufacturer": "Vectron International",
+        "used_in": ["dev_002", "dev_003", "dev_004", "dev_005", "dev_008"],
+    },
+    {
+        "id": "comp_010",
+        "name": "Input Protection Network",
+        "description": "TVS diodes and series resistors at measurement inputs that protect against overvoltage, ESD, and transient spikes.",
+        "manufacturer": "Bourns",
+        "used_in": ["dev_001", "dev_002", "dev_003", "dev_004", "dev_007", "dev_009"],
+    },
+]
