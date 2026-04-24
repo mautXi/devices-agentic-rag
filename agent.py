@@ -59,44 +59,56 @@ class Agent:
         self.model = model
         self.max_steps = max_steps
 
-    def run(self, user_query: str) -> str:
+    def run(self, user_query: str) -> tuple[str, list[str]]:
+        """
+        Run the ReAct loop for the given query.
+        Returns (answer, steps) where steps is a list of reasoning+observation
+        strings — one entry per tool call round.
+        """
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_query},
         ]
+        steps: list[str] = []
 
         print(f"\n[Agent] Query: {user_query}")
         print("-" * 60)
 
-        for step in range(self.max_steps):
+        for step_num in range(self.max_steps):
             response = self._call_llm(messages)
-            print(f"\n[Step {step + 1}]\n{response}")
+            print(f"\n[Step {step_num + 1}]\n{response}")
 
             # Check for Final Answer
             if "Final Answer:" in response:
+                pre_final = response.split("Final Answer:")[0].strip()
+                if pre_final:
+                    steps.append(pre_final)
                 final = response.split("Final Answer:")[-1].strip()
-                return final
+                return final, steps
 
             # Parse Action + Action Input
             action, action_input = self._parse_action(response)
             if not action:
-                # No parseable action — treat the whole response as the answer
-                return response.strip()
+                # No parseable action — treat whole response as answer
+                return response.strip(), steps
 
             # Execute tool
             if action not in self.tools:
-                observation = json.dumps({"error": f"Unknown tool '{action}'. Available: {list(self.tools.keys())}"})
+                observation = json.dumps(
+                    {"error": f"Unknown tool '{action}'. Available: {list(self.tools.keys())}"}
+                )
             else:
                 print(f"\n[Tool] {action} ← {action_input}")
                 observation = self.tools[action].run(action_input)
-                # Truncate long observations; TODO: In the future, consider summarization for long results
                 print(f"[Observation] {observation[:300]}{'...' if len(observation) > 300 else ''}")
 
-            # Append assistant response + observation to message history
+            # Collect this round as a single step string for display
+            steps.append(f"{response.strip()}\n\nObservation:\n{observation}")
+
             messages.append({"role": "assistant", "content": response})
             messages.append({"role": "user", "content": f"Observation: {observation}"})
 
-        return "I was unable to complete the task within the allowed number of steps."
+        return "I was unable to complete the task within the allowed number of steps.", steps
 
     def _call_llm(self, messages: list) -> str:
         response = ollama.chat(
@@ -107,13 +119,10 @@ class Agent:
         return response["message"]["content"]
 
     def _parse_action(self, text: str) -> tuple[str | None, str | None]:
-        """Extract Action and Action Input from the LLM output."""
         action_match = re.search(r"Action:\s*(\w+)", text)
         input_match = re.search(r"Action Input:\s*(\{[^}]*\})", text, re.DOTALL)
 
         if not action_match or not input_match:
             return None, None
 
-        action = action_match.group(1).strip()
-        action_input = input_match.group(1).strip()
-        return action, action_input
+        return action_match.group(1).strip(), input_match.group(1).strip()

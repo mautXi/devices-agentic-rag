@@ -51,7 +51,7 @@ def main():
 
     try:
         if args.query:
-            answer = agent.run(args.query)
+            answer, _ = agent.run(args.query)
             print("\n" + "=" * 60)
             print("Answer:", answer)
             return
@@ -77,7 +77,7 @@ def main():
                 print("Goodbye.")
                 break
 
-            answer = agent.run(query)
+            answer, _ = agent.run(query)
             print("\n" + "=" * 60)
             print(f"Answer: {answer}")
             print("=" * 60 + "\n")
