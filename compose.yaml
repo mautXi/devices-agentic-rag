@@ -1,0 +1,36 @@
+services:
+  neo4j:
+    image: neo4j:5-community
+    container_name: neo4j-devices
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: "neo4j/password"
+      NEO4J_server_memory_heap_max__size: "512m"
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7474"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: chroma-devices
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  neo4j_data:
+  chroma_data:
