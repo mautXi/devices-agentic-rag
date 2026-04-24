@@ -22,6 +22,7 @@ from data.sample_data import DEVICES
 COLLECTION_NAME = "measuring_devices"
 EMBED_MODEL = "all-MiniLM-L6-v2"
 
+# Env vars for ChromaDB connection; if not set, defaults assume local container setup with podman-compose
 CHROMA_HOST = os.getenv("CHROMA_HOST", "localhost")
 CHROMA_PORT = int(os.getenv("CHROMA_PORT", "8000"))
 
