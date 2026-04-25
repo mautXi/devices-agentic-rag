@@ -14,7 +14,12 @@ Usage:
 import argparse
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from agent import Agent
+from tools.hybrid_search import HybridSearchTool
 from tools.knowledge_graph import KnowledgeGraphTool
 from tools.vector_store import VectorStoreTool
 
@@ -43,7 +48,8 @@ def build_agent(model: str) -> tuple[Agent, KnowledgeGraphTool]:
     print("Initializing tools...")
     kg_tool = KnowledgeGraphTool()
     vs_tool = VectorStoreTool()
-    tools = kg_tool.get_tools() + vs_tool.get_tools()
+    hs_tool = HybridSearchTool(kg_tool, vs_tool)
+    tools = kg_tool.get_tools() + vs_tool.get_tools() + hs_tool.get_tools()
     print("Tools ready.\n")
     return Agent(tools=tools, model=model), kg_tool
 

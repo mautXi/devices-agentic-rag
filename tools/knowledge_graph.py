@@ -6,10 +6,10 @@ Graph schema:
   (:Component {id, name, description, manufacturer})
   (:Device)-[:USES]->(:Component)
 
-Connection settings are read from env vars with sensible defaults:
+Connection settings are read from env vars (set in .env):
   NEO4J_URI      (default: bolt://localhost:7687)
-  NEO4J_USER     (default: neo4j)
-  NEO4J_PASSWORD (default: password)
+  NEO4J_USER     (required)
+  NEO4J_PASSWORD (required)
 """
 
 import json
@@ -22,10 +22,9 @@ from neo4j.exceptions import ServiceUnavailable
 
 from data.sample_data import DEVICES, COMPONENTS
 
-# Env vars for Neo4j connection; if not set, defaults assume local setup with podman-compose
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
-NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
-NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")
+NEO4J_USER = os.environ["NEO4J_USER"]
+NEO4J_PASSWORD = os.environ["NEO4J_PASSWORD"]
 
 
 class KnowledgeGraphTool:
@@ -83,10 +82,11 @@ class KnowledgeGraphTool:
             session.run(
                 """
                 MERGE (c:Component {id: $id})
-                SET c.name = $name, c.description = $description, c.manufacturer = $manufacturer
+                SET c.name = $name, c.description = $description,
+                    c.manufacturer = $manufacturer, c.category = $category
                 """,
-                id=comp["id"], name=comp["name"],
-                description=comp["description"], manufacturer=comp["manufacturer"],
+                id=comp["id"], name=comp["name"], description=comp["description"],
+                manufacturer=comp["manufacturer"], category=comp.get("category", ""),
             )
             for device_id in comp["used_in"]:
                 # Relationships between devices and components
@@ -128,6 +128,14 @@ class KnowledgeGraphTool:
                 func=self.list_all_devices,
                 name="list_all_devices",
                 description="List every device in the knowledge graph with its category.",
+            ),
+            StructuredTool.from_function(
+                func=self.get_components_by_category,
+                name="get_components_by_category",
+                description=(
+                    "Find all components belonging to a category. "
+                    "Valid categories: signal_processing, protection, power, timing, rf, measurement, signal_generation."
+                ),
             ),
         ]
 
@@ -177,7 +185,8 @@ class KnowledgeGraphTool:
         cypher = """
             MATCH (c:Component)
             WHERE toLower(c.name) CONTAINS toLower($name)
-            RETURN c.name AS name, c.description AS description, c.manufacturer AS manufacturer
+            RETURN c.name AS name, c.description AS description,
+                   c.manufacturer AS manufacturer, c.category AS category
             LIMIT 1
         """
         with self.driver.session() as session:
@@ -186,7 +195,27 @@ class KnowledgeGraphTool:
         if not record:
             return json.dumps({"error": f"Component '{component_name}' not found in knowledge graph."})
 
-        return json.dumps({"name": record["name"], "description": record["description"], "manufacturer": record["manufacturer"]})
+        return json.dumps({
+            "name": record["name"],
+            "description": record["description"],
+            "manufacturer": record["manufacturer"],
+            "category": record["category"],
+        })
+
+    def get_components_by_category(self, category: str) -> str:
+        cypher = """
+            MATCH (c:Component)
+            WHERE toLower(c.category) = toLower($category)
+            RETURN c.name AS name, c.description AS description, c.manufacturer AS manufacturer
+            ORDER BY c.name
+        """
+        with self.driver.session() as session:
+            records = session.run(cypher, category=category).data()
+
+        if not records:
+            return json.dumps({"error": f"No components found for category '{category}'."})
+
+        return json.dumps({"category": category, "total": len(records), "components": records})
 
     def list_all_components(self) -> str:
         cypher = "MATCH (c:Component) RETURN c.name AS name, c.manufacturer AS manufacturer ORDER BY c.name"
