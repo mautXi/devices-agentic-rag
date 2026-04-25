@@ -22,7 +22,7 @@ def load_agent() -> Agent:
     return Agent(tools=tools, model=MODEL)
 
 
-st.title("⚡ Measuring Devices Assistant")
+st.title("Measuring Devices Assistant")
 st.caption("Ask about devices, components, manufacturers, or use cases.")
 
 agent = load_agent()
