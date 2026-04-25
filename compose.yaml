@@ -2,6 +2,8 @@ services:
   neo4j:
     image: neo4j:5-community
     container_name: neo4j-devices
+    networks:
+      - devices-net
     ports:
       - "7474:7474"
       - "7687:7687"
@@ -20,6 +22,8 @@ services:
   chromadb:
     image: chromadb/chroma:latest
     container_name: chroma-devices
+    networks:
+      - devices-net
     ports:
       - "8000:8000"
     volumes:
@@ -31,23 +35,60 @@ services:
       retries: 10
       start_period: 10s
 
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama-devices
-    ports:
-      - "11434:11434"
+  model-puller:
+    image: python:3.12-slim
+    container_name: model-puller
     volumes:
-      - ollama_data:/root/.ollama
+      - hf_cache:/root/.cache/huggingface
+    environment:
+      HF_TOKEN: ${HF_TOKEN}
+    command: >
+      sh -c '
+        pip install -q huggingface_hub &&
+        hf download TinyLlama/TinyLlama-1.1B-Chat-v1.0
+      '
+
+  vllm:
+    build:
+      context: .
+      dockerfile: vllm.Dockerfile
+    container_name: vllm-devices
+    networks:
+      - devices-net
+    ports:
+      - "8080:8000"
+    ipc: host
+    environment:
+      OMP_NUM_THREADS: "6"
+      MKL_NUM_THREADS: "6"
+      VLLM_CPU_KVCACHE_SPACE: "4"
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+    depends_on:
+      model-puller:
+        condition: service_completed_successfully
+    command: >
+      --model TinyLlama/TinyLlama-1.1B-Chat-v1.0
+      --host 0.0.0.0
+      --port 8000
+      --tokenizer-mode auto
+      --trust-remote-code
+      --enforce-eager
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/11434'"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
 
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: app.Dockerfile
     container_name: devices-app
+    networks:
+      - devices-net
     ports:
       - "8501:8501"
     environment:
@@ -56,17 +97,35 @@ services:
       NEO4J_PASSWORD: password
       CHROMA_HOST: chromadb
       CHROMA_PORT: "8000"
-      OLLAMA_HOST: http://ollama:11434
-      OLLAMA_MODEL: llama3.2
+      VLLM_BASE_URL: http://vllm:8000/v1
+      VLLM_MODEL: TinyLlama/TinyLlama-1.1B-Chat-v1.0
+
     depends_on:
+      vllm:
+        condition: service_healthy
       neo4j:
         condition: service_healthy
       chromadb:
         condition: service_healthy
-      ollama:
-        condition: service_healthy
+    command: >
+      sh -c '
+        echo "Waiting for vLLM...";
+        until curl -sf http://vllm:8000/health > /dev/null 2>&1; do
+          echo "  vLLM not ready, retrying in 10s...";
+          sleep 10;
+        done;
+        echo "vLLM ready. Starting Streamlit.";
+        exec streamlit run app.py
+          --server.port=8501
+          --server.address=0.0.0.0
+          --server.headless=true
+      '
+
+networks:
+  devices-net:
+    driver: bridge
 
 volumes:
   neo4j_data:
   chroma_data:
-  ollama_data:
+  hf_cache:

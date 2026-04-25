@@ -1,12 +1,11 @@
 import os
 import streamlit as st
-import ollama as ollama_client
 
 from agent import Agent
 from tools.knowledge_graph import KnowledgeGraphTool
 from tools.vector_store import VectorStoreTool
 
-MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
+MODEL = os.getenv("VLLM_MODEL", "TinyLlama/TinyLlama-1.1B-Chat-v1.0")
 
 st.set_page_config(
     page_title="Measuring Devices Assistant",
@@ -17,7 +16,6 @@ st.set_page_config(
 
 @st.cache_resource(show_spinner="Starting up — this may take a moment on first run...")
 def load_agent() -> Agent:
-    ollama_client.pull(MODEL)
     kg = KnowledgeGraphTool()
     vs = VectorStoreTool()
     return Agent(tools=[kg, vs], model=MODEL)

@@ -129,13 +129,15 @@ docker compose up -d
 podman-compose up -d
 ```
 
-This starts the AI model, the databases, and the web interface. On the first run it may take a few minutes to download everything.
+This starts the LLM server, the databases, and the web interface. On the **first run**, vLLM downloads the model (~6 GB) before the app becomes available — allow a few minutes. Subsequent starts are fast since the model is cached in a volume. No HuggingFace token is required.
 
-**2. Open the app**
+> **Note:** vLLM performs best with a GPU. CPU-only is supported but inference will be slower.
+
+**3. Open the app**
 
 Go to [http://localhost:8501](http://localhost:8501) in your browser and start asking questions.
 
-**3. Stop the services**
+**4. Stop the services**
 
 ```bash
 docker compose down
@@ -145,7 +147,7 @@ podman-compose down
 
 ---
 
-*Built with [Ollama](https://ollama.com), [Neo4j](https://neo4j.com), [ChromaDB](https://www.trychroma.com), and [Streamlit](https://streamlit.io).*
+*Built with [vLLM](https://docs.vllm.ai), [Neo4j](https://neo4j.com), [ChromaDB](https://www.trychroma.com), and [Streamlit](https://streamlit.io).*
 
 ---
 

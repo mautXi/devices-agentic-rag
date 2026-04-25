@@ -2,21 +2,23 @@
 Agentic RAG system for measuring devices.
 
 Prerequisites:
-  1. Start containers:  podman-compose up -d
-  2. Ollama running:    ollama serve  (then: ollama pull llama3.2)
+  Start containers: podman-compose up -d  (or docker compose up -d)
+  vLLM downloads the model on first start — allow a few minutes.
 
 Usage:
-  python main.py                         # interactive mode
-  python main.py -q "your question"      # single query mode
-  python main.py --model llama3.1 -q … # override model
+  python main.py                                  # interactive mode
+  python main.py -q "your question"               # single query mode
+  python main.py --model TinyLlama/TinyLlama-1.1B-Chat-v1.0 -q "…"
 """
 
 import argparse
+import os
+
 from agent import Agent
 from tools.knowledge_graph import KnowledgeGraphTool
 from tools.vector_store import VectorStoreTool
 
-DEFAULT_MODEL = "llama3.2"
+DEFAULT_MODEL = os.getenv("VLLM_MODEL", "TinyLlama/TinyLlama-1.1B-Chat-v1.0")
 
 
 def parse_args() -> argparse.Namespace:
@@ -32,7 +34,7 @@ def parse_args() -> argparse.Namespace:
         "--model",
         default=DEFAULT_MODEL,
         metavar="MODEL",
-        help=f"Ollama model to use (default: {DEFAULT_MODEL}).",
+        help=f"HuggingFace model ID served by vLLM (default: {DEFAULT_MODEL}).",
     )
     return parser.parse_args()
 

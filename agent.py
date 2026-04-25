@@ -2,15 +2,21 @@
 ReAct Agent for the measuring devices RAG system.
 
 Loop: Thought → Action → Observation → (repeat or) Final Answer
-The agent uses an Ollama-hosted LLM and has access to two tools:
-  - knowledge_graph: structured component/device relationships
-  - vector_store: semantic device search
+The agent connects to a vLLM instance via the OpenAI-compatible HTTP API.
+
+Connection settings are read from env vars with sensible defaults:
+  VLLM_BASE_URL  (default: http://localhost:8080/v1)
 """
 
 import json
+import os
 import re
-import ollama
+import time
 
+from openai import OpenAI
+
+
+VLLM_BASE_URL = os.getenv("VLLM_BASE_URL", "http://localhost:8080/v1")
 
 SYSTEM_PROMPT = """You are an expert assistant for measuring and test equipment.
 You have access to two tools to answer questions:
@@ -54,10 +60,12 @@ Rules:
 
 
 class Agent:
-    def __init__(self, tools: list, model: str = "llama3.2", max_steps: int = 6):
+    def __init__(self, tools: list, model: str = "TinyLlama/TinyLlama-1.1B-Chat-v1.0", max_steps: int = 6):
         self.tools = {t.name: t for t in tools}
         self.model = model
         self.max_steps = max_steps
+        self._client = OpenAI(base_url=VLLM_BASE_URL, api_key="vllm")
+        self._verify_connection()
 
     def run(self, user_query: str) -> tuple[str, list[str]]:
         """
@@ -89,7 +97,6 @@ class Agent:
             # Parse Action + Action Input
             action, action_input = self._parse_action(response)
             if not action:
-                # No parseable action — treat whole response as answer
                 return response.strip(), steps
 
             # Execute tool
@@ -102,7 +109,6 @@ class Agent:
                 observation = self.tools[action].run(action_input)
                 print(f"[Observation] {observation[:300]}{'...' if len(observation) > 300 else ''}")
 
-            # Collect this round as a single step string for display
             steps.append(f"{response.strip()}\n\nObservation:\n{observation}")
 
             messages.append({"role": "assistant", "content": response})
@@ -110,13 +116,36 @@ class Agent:
 
         return "I was unable to complete the task within the allowed number of steps.", steps
 
+    def _verify_connection(self, retries: int = 60, delay: float = 10.0):
+        """
+        Wait for vLLM to be reachable AND have a model loaded.
+        vLLM returns HTTP 503 while the model is still loading, which the
+        OpenAI client surfaces as InternalServerError — distinct from a
+        pure network failure (APIConnectionError). Both are retried here.
+        """
+        print(f"[Agent] Waiting for vLLM at {VLLM_BASE_URL}...")
+        for attempt in range(1, retries + 1):
+            try:
+                models = self._client.models.list()
+                if models.data:
+                    print(f"[Agent] vLLM ready (model: {models.data[0].id}).")
+                    return
+            except Exception:
+                pass
+            print(f"[Agent] vLLM not ready yet ({attempt}/{retries}), retrying in {int(delay)}s...")
+            time.sleep(delay)
+        raise RuntimeError(
+            f"vLLM not reachable at {VLLM_BASE_URL} after {retries} attempts.\n"
+            "Start the containers with:  podman-compose up -d"
+        )
+
     def _call_llm(self, messages: list) -> str:
-        response = ollama.chat(
+        response = self._client.chat.completions.create(
             model=self.model,
             messages=messages,
-            options={"temperature": 0.1},
+            temperature=0.1,
         )
-        return response["message"]["content"]
+        return response.choices[0].message.content
 
     def _parse_action(self, text: str) -> tuple[str | None, str | None]:
         action_match = re.search(r"Action:\s*(\w+)", text)
