@@ -49,15 +49,13 @@ services:
       '
 
   vllm:
-    build:
-      context: .
-      dockerfile: vllm.Dockerfile
+    build: docker/vllm
     container_name: vllm-devices
     networks:
       - devices-net
     ports:
       - "8080:8000"
-    ipc: host
+    shm_size: '2gb'
     environment:
       OMP_NUM_THREADS: "6"
       MKL_NUM_THREADS: "6"
@@ -83,10 +81,8 @@ services:
       start_period: 120s
 
   app:
-    build:
-      context: .
-      dockerfile: app.Dockerfile
-    container_name: devices-app
+    build: .
+    container_name: app-devices
     networks:
       - devices-net
     ports:
@@ -99,6 +95,7 @@ services:
       CHROMA_PORT: "8000"
       VLLM_BASE_URL: http://vllm:8000/v1
       VLLM_MODEL: TinyLlama/TinyLlama-1.1B-Chat-v1.0
+      AGENT_MAX_STEPS: "3"
 
     depends_on:
       vllm:

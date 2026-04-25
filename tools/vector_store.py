@@ -14,6 +14,7 @@ import os
 import time
 
 import chromadb
+from langchain_core.tools import StructuredTool
 from sentence_transformers import SentenceTransformer
 
 from data.sample_data import DEVICES
@@ -28,13 +29,6 @@ CHROMA_PORT = int(os.getenv("CHROMA_PORT", "8000"))
 
 
 class VectorStoreTool:
-    name = "vector_store"
-    description = (
-        "Semantic search over measuring devices. "
-        "Use this to find devices by purpose, measurement type, or use case. "
-        "Returns device names, descriptions, and categories ranked by relevance."
-    )
-
     def __init__(self, retries: int = 10, retry_delay: float = 3.0):
         print("[VectorStore] Loading embedding model...")
         self.embedder = SentenceTransformer(EMBED_MODEL)
@@ -86,7 +80,21 @@ class VectorStoreTool:
         self.collection.add(ids=ids, documents=documents, embeddings=embeddings, metadatas=metadatas)
         print(f"[VectorStore] Seeded {len(documents)} devices.")
 
-    def search(self, query: str, top_k: int = 3) -> dict:
+    def get_tools(self) -> list:
+        return [
+            StructuredTool.from_function(
+                func=self.search,
+                name="search_devices",
+                description="Semantic search over measuring devices by purpose, use case, or measurement type. Use for open-ended questions like 'what device should I use for RF work?'",
+            ),
+            StructuredTool.from_function(
+                func=self.get_device_by_name,
+                name="get_device_by_name",
+                description="Find a device by its name. Use when you know the device name or part of it.",
+            ),
+        ]
+
+    def search(self, query: str, top_k: int = 3) -> str:
         """Semantic search — returns top_k most relevant devices."""
         query_embedding = self.embedder.encode([query]).tolist()
         results = self.collection.query(
@@ -105,9 +113,9 @@ class VectorStoreTool:
                 "similarity_score": round(1 - results["distances"][0][i], 3),
             })
 
-        return {"query": query, "results": hits}
+        return json.dumps({"query": query, "results": hits})
 
-    def get_device_by_name(self, name: str) -> dict:
+    def get_device_by_name(self, name: str) -> str:
         """Fetch a device by exact or partial name match."""
         all_results = self.collection.get(include=["documents", "metadatas"])
         matches = []
@@ -121,37 +129,5 @@ class VectorStoreTool:
                     "description": all_results["documents"][i],
                 })
         if not matches:
-            return {"error": f"No device matching '{name}' found."}
-        return {"matches": matches}
-
-    # ------------------------------------------------------------------
-    # Main callable entry point used by the agent
-    # ------------------------------------------------------------------
-
-    def run(self, query: str, **kwargs) -> str:
-        """
-        Dispatch based on JSON input from the agent:
-          {"action": "search", "query": "oscilloscope for signal analysis", "top_k": 3}
-          {"action": "get_device_by_name", "name": "Fluke"}
-        """
-        try:
-            params = json.loads(query)
-        except json.JSONDecodeError:
-            return json.dumps({"error": "Invalid JSON input to vector_store tool."})
-
-        action = params.get("action", "")
-
-        if action == "search":
-            result = self.search(
-                query=params.get("query", ""),
-                top_k=params.get("top_k", 3),
-            )
-        elif action == "get_device_by_name":
-            result = self.get_device_by_name(params.get("name", ""))
-        else:
-            result = {
-                "error": f"Unknown action '{action}'.",
-                "available_actions": ["search", "get_device_by_name"],
-            }
-
-        return json.dumps(result, indent=2)
+            return json.dumps({"error": f"No device matching '{name}' found."})
+        return json.dumps({"matches": matches})

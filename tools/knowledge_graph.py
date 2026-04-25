@@ -6,7 +6,6 @@ Graph schema:
   (:Component {id, name, description, manufacturer})
   (:Device)-[:USES]->(:Component)
 
-Requires a running Neo4j instance — see neo4j_start.sh.
 Connection settings are read from env vars with sensible defaults:
   NEO4J_URI      (default: bolt://localhost:7687)
   NEO4J_USER     (default: neo4j)
@@ -17,6 +16,7 @@ import json
 import os
 import time
 
+from langchain_core.tools import StructuredTool
 from neo4j import GraphDatabase
 from neo4j.exceptions import ServiceUnavailable
 
@@ -29,14 +29,6 @@ NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")
 
 
 class KnowledgeGraphTool:
-    name = "knowledge_graph"
-    description = (
-        "Query the knowledge graph for device components. "
-        "Use this to find: which components a device uses, "
-        "which devices use a specific component, "
-        "component descriptions and manufacturers."
-    )
-
     def __init__(self, retries: int = 10, retry_delay: float = 3.0):
         print("[KnowledgeGraph] Connecting to Neo4j...")
         self.driver = self._connect(retries, retry_delay)
@@ -110,7 +102,36 @@ class KnowledgeGraphTool:
     # Query methods
     # ------------------------------------------------------------------
 
-    def get_components_of_device(self, device_name: str) -> dict:
+    def get_tools(self) -> list:
+        return [
+            StructuredTool.from_function(
+                func=self.get_components_of_device,
+                name="get_components_of_device",
+                description="Get all components used by a specific device. Use when asked what parts or components are inside a device.",
+            ),
+            StructuredTool.from_function(
+                func=self.get_devices_using_component,
+                name="get_devices_using_component",
+                description="Find all devices that use a specific component. Use when asked which devices contain a particular part.",
+            ),
+            StructuredTool.from_function(
+                func=self.get_component_info,
+                name="get_component_info",
+                description="Get description and manufacturer of a component by name.",
+            ),
+            StructuredTool.from_function(
+                func=self.list_all_components,
+                name="list_all_components",
+                description="List every component in the knowledge graph with its manufacturer.",
+            ),
+            StructuredTool.from_function(
+                func=self.list_all_devices,
+                name="list_all_devices",
+                description="List every device in the knowledge graph with its category.",
+            ),
+        ]
+
+    def get_components_of_device(self, device_name: str) -> str:
         cypher = """
             MATCH (d:Device)-[:USES]->(c:Component)
             WHERE toLower(d.name) CONTAINS toLower($name)
@@ -121,18 +142,18 @@ class KnowledgeGraphTool:
             records = session.run(cypher, name=device_name).data()
 
         if not records:
-            return {"error": f"Device '{device_name}' not found in knowledge graph."}
+            return json.dumps({"error": f"Device '{device_name}' not found in knowledge graph."})
 
-        return {
+        return json.dumps({
             "device": records[0]["device"],
             "component_count": len(records),
             "components": [
                 {"name": r["name"], "description": r["description"], "manufacturer": r["manufacturer"]}
                 for r in records
             ],
-        }
+        })
 
-    def get_devices_using_component(self, component_name: str) -> dict:
+    def get_devices_using_component(self, component_name: str) -> str:
         cypher = """
             MATCH (d:Device)-[:USES]->(c:Component)
             WHERE toLower(c.name) CONTAINS toLower($name)
@@ -143,16 +164,16 @@ class KnowledgeGraphTool:
             records = session.run(cypher, name=component_name).data()
 
         if not records:
-            return {"error": f"Component '{component_name}' not found in knowledge graph."}
+            return json.dumps({"error": f"Component '{component_name}' not found in knowledge graph."})
 
-        return {
+        return json.dumps({
             "component": records[0]["component"],
             "manufacturer": records[0]["manufacturer"],
             "used_by_count": len(records),
             "devices": [{"name": r["device_name"], "category": r["category"]} for r in records],
-        }
+        })
 
-    def get_component_info(self, component_name: str) -> dict:
+    def get_component_info(self, component_name: str) -> str:
         cypher = """
             MATCH (c:Component)
             WHERE toLower(c.name) CONTAINS toLower($name)
@@ -163,62 +184,18 @@ class KnowledgeGraphTool:
             record = session.run(cypher, name=component_name).single()
 
         if not record:
-            return {"error": f"Component '{component_name}' not found in knowledge graph."}
+            return json.dumps({"error": f"Component '{component_name}' not found in knowledge graph."})
 
-        return {"name": record["name"], "description": record["description"], "manufacturer": record["manufacturer"]}
+        return json.dumps({"name": record["name"], "description": record["description"], "manufacturer": record["manufacturer"]})
 
-    def list_all_components(self) -> dict:
+    def list_all_components(self) -> str:
         cypher = "MATCH (c:Component) RETURN c.name AS name, c.manufacturer AS manufacturer ORDER BY c.name"
         with self.driver.session() as session:
             records = session.run(cypher).data()
-        return {"total": len(records), "components": records}
+        return json.dumps({"total": len(records), "components": records})
 
-    def list_all_devices(self) -> dict:
+    def list_all_devices(self) -> str:
         cypher = "MATCH (d:Device) RETURN d.name AS name, d.category AS category ORDER BY d.name"
         with self.driver.session() as session:
             records = session.run(cypher).data()
-        return {"total": len(records), "devices": records}
-
-    # ------------------------------------------------------------------
-    # Main callable entry point used by the agent
-    # ------------------------------------------------------------------
-
-    def run(self, query: str, **kwargs) -> str:
-        """
-        Dispatch based on the query string. The agent passes a JSON string like:
-          {"action": "get_components_of_device", "device_name": "Fluke 87V Multimeter"}
-          {"action": "get_devices_using_component", "component_name": "FPGA"}
-          {"action": "get_component_info", "component_name": "ADC"}
-          {"action": "list_all_components"}
-          {"action": "list_all_devices"}
-        """
-        try:
-            params = json.loads(query)
-        except json.JSONDecodeError:
-            return json.dumps({"error": "Invalid JSON input to knowledge_graph tool."})
-
-        action = params.get("action", "")
-
-        if action == "get_components_of_device":
-            result = self.get_components_of_device(params.get("device_name", ""))
-        elif action == "get_devices_using_component":
-            result = self.get_devices_using_component(params.get("component_name", ""))
-        elif action == "get_component_info":
-            result = self.get_component_info(params.get("component_name", ""))
-        elif action == "list_all_components":
-            result = self.list_all_components()
-        elif action == "list_all_devices":
-            result = self.list_all_devices()
-        else:
-            result = {
-                "error": f"Unknown action '{action}'.",
-                "available_actions": [
-                    "get_components_of_device",
-                    "get_devices_using_component",
-                    "get_component_info",
-                    "list_all_components",
-                    "list_all_devices",
-                ],
-            }
-
-        return json.dumps(result, indent=2)
+        return json.dumps({"total": len(records), "devices": records})

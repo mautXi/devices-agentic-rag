@@ -43,8 +43,9 @@ def build_agent(model: str) -> tuple[Agent, KnowledgeGraphTool]:
     print("Initializing tools...")
     kg_tool = KnowledgeGraphTool()
     vs_tool = VectorStoreTool()
+    tools = kg_tool.get_tools() + vs_tool.get_tools()
     print("Tools ready.\n")
-    return Agent(tools=[kg_tool, vs_tool], model=model), kg_tool
+    return Agent(tools=tools, model=model), kg_tool
 
 
 def main():

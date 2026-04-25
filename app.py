@@ -18,7 +18,8 @@ st.set_page_config(
 def load_agent() -> Agent:
     kg = KnowledgeGraphTool()
     vs = VectorStoreTool()
-    return Agent(tools=[kg, vs], model=MODEL)
+    tools = kg.get_tools() + vs.get_tools()
+    return Agent(tools=tools, model=MODEL)
 
 
 st.title("⚡ Measuring Devices Assistant")
@@ -29,7 +30,6 @@ agent = load_agent()
 if "history" not in st.session_state:
     st.session_state.history = []
 
-# Render chat history
 for entry in st.session_state.history:
     with st.chat_message("user"):
         st.write(entry["query"])
@@ -41,7 +41,6 @@ for entry in st.session_state.history:
                     st.code(step, language=None)
         st.write(entry["answer"])
 
-# Chat input
 if query := st.chat_input("Ask about a measuring device or component..."):
     with st.chat_message("user"):
         st.write(query)

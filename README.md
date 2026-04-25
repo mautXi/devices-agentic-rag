@@ -119,29 +119,25 @@ The agent picks the right approach automatically, and you can always see its rea
 
 ## Getting started
 
-**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) or [Podman](https://podman.io/getting-started/installation) with Compose support.
+**Prerequisites:** [Podman](https://podman.io/getting-started/installation) with [podman-compose](https://github.com/containers/podman-compose).
 
 **1. Start all services**
 
 ```bash
-docker compose up -d
-# or
 podman-compose up -d
 ```
 
-This starts the LLM server, the databases, and the web interface. On the **first run**, vLLM downloads the model (~6 GB) before the app becomes available — allow a few minutes. Subsequent starts are fast since the model is cached in a volume. No HuggingFace token is required.
+This starts the LLM server, the databases, and the web interface. On the **first run**, the model is downloaded into a named volume which takes some time. Subsequent starts are fast since the model is cached.
 
 > **Note:** vLLM performs best with a GPU. CPU-only is supported but inference will be slower.
 
-**3. Open the app**
+**2. Open the app**
 
 Go to [http://localhost:8501](http://localhost:8501) in your browser and start asking questions.
 
-**4. Stop the services**
+**3. Stop the services**
 
 ```bash
-docker compose down
-# or
 podman-compose down
 ```
 
