@@ -5,7 +5,7 @@ from agent import Agent
 from tools.knowledge_graph import KnowledgeGraphTool
 from tools.vector_store import VectorStoreTool
 
-MODEL = os.getenv("VLLM_MODEL", "TinyLlama/TinyLlama-1.1B-Chat-v1.0")
+MODEL = os.getenv("VLLM_MODEL", "Qwen/Qwen2.5-3B-Instruct")
 
 st.set_page_config(
     page_title="Measuring Devices Assistant",

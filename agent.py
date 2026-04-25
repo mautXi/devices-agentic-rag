@@ -8,7 +8,7 @@ Connection settings are read from env vars with sensible defaults:
 import os
 import time
 
-from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 from openai import OpenAI
@@ -24,7 +24,7 @@ Be concise and factual."""
 
 
 class Agent:
-    def __init__(self, tools: list, model: str = "TinyLlama/TinyLlama-1.1B-Chat-v1.0", max_steps: int = AGENT_MAX_STEPS):
+    def __init__(self, tools: list, model: str = "Qwen/Qwen2.5-3B-Instruct", max_steps: int = AGENT_MAX_STEPS):
         self.max_steps = max_steps
         self._verify_connection()
 
@@ -34,7 +34,7 @@ class Agent:
             model=model,
             temperature=0.1,
         )
-        self._graph = create_react_agent(llm, tools, state_modifier=SYSTEM_PROMPT)
+        self._graph = create_react_agent(llm, tools)
 
     def run(self, user_query: str) -> tuple[str, list[str]]:
         """Run the agent and return (final_answer, steps)."""
@@ -42,7 +42,7 @@ class Agent:
         print("-" * 60)
 
         result = self._graph.invoke(
-            {"messages": [("human", user_query)]},
+            {"messages": [SystemMessage(content=SYSTEM_PROMPT), ("human", user_query)]},
             config={"recursion_limit": self.max_steps * 2 + 1},
         )
 

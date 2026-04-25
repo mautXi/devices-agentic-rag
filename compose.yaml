@@ -45,7 +45,7 @@ services:
     command: >
       sh -c '
         pip install -q huggingface_hub &&
-        hf download TinyLlama/TinyLlama-1.1B-Chat-v1.0
+        hf download Qwen/Qwen2.5-3B-Instruct
       '
 
   vllm:
@@ -66,12 +66,14 @@ services:
       model-puller:
         condition: service_completed_successfully
     command: >
-      --model TinyLlama/TinyLlama-1.1B-Chat-v1.0
+      --model Qwen/Qwen2.5-3B-Instruct
       --host 0.0.0.0
       --port 8000
       --tokenizer-mode auto
       --trust-remote-code
       --enforce-eager
+      --enable-auto-tool-choice
+      --tool-call-parser hermes
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -94,7 +96,7 @@ services:
       CHROMA_HOST: chromadb
       CHROMA_PORT: "8000"
       VLLM_BASE_URL: http://vllm:8000/v1
-      VLLM_MODEL: TinyLlama/TinyLlama-1.1B-Chat-v1.0
+      VLLM_MODEL: Qwen/Qwen2.5-3B-Instruct
       AGENT_MAX_STEPS: "3"
 
     depends_on:

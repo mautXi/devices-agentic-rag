@@ -8,7 +8,7 @@ Prerequisites:
 Usage:
   python main.py                                  # interactive mode
   python main.py -q "your question"               # single query mode
-  python main.py --model TinyLlama/TinyLlama-1.1B-Chat-v1.0 -q "…"
+  python main.py --model Qwen/Qwen2.5-3B-Instruct -q "…"
 """
 
 import argparse
@@ -18,7 +18,7 @@ from agent import Agent
 from tools.knowledge_graph import KnowledgeGraphTool
 from tools.vector_store import VectorStoreTool
 
-DEFAULT_MODEL = os.getenv("VLLM_MODEL", "TinyLlama/TinyLlama-1.1B-Chat-v1.0")
+DEFAULT_MODEL = os.getenv("VLLM_MODEL", "Qwen/Qwen2.5-3B-Instruct")
 
 
 def parse_args() -> argparse.Namespace:
