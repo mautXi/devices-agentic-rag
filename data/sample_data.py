@@ -83,6 +83,7 @@ COMPONENTS = [
         "name": "ADC (Analog-to-Digital Converter)",
         "description": "Converts continuous analog signals into discrete digital values. Core component for digitizing measured signals in instruments.",
         "manufacturer": "Texas Instruments",
+        "category": "signal_processing",
         "used_in": ["dev_001", "dev_002", "dev_003", "dev_004", "dev_009", "dev_010"],
     },
     {
@@ -90,6 +91,7 @@ COMPONENTS = [
         "name": "FPGA (Field-Programmable Gate Array)",
         "description": "Reconfigurable integrated circuit used for high-speed signal processing, triggering logic, and real-time waveform analysis in oscilloscopes.",
         "manufacturer": "Xilinx (AMD)",
+        "category": "signal_processing",
         "used_in": ["dev_002", "dev_003", "dev_004", "dev_008"],
     },
     {
@@ -97,6 +99,7 @@ COMPONENTS = [
         "name": "High-Voltage Isolation Amplifier",
         "description": "Provides galvanic isolation between high-voltage measurement inputs and low-voltage digital circuitry to protect users and electronics.",
         "manufacturer": "Analog Devices",
+        "category": "protection",
         "used_in": ["dev_001", "dev_007", "dev_010"],
     },
     {
@@ -104,6 +107,7 @@ COMPONENTS = [
         "name": "DDS (Direct Digital Synthesis) Chip",
         "description": "Generates precise analog waveforms from digital data using a numerically controlled oscillator. Core of function/arbitrary waveform generators.",
         "manufacturer": "Analog Devices",
+        "category": "signal_generation",
         "used_in": ["dev_005"],
     },
     {
@@ -111,6 +115,7 @@ COMPONENTS = [
         "name": "Linear Voltage Regulator",
         "description": "Maintains a constant output voltage regardless of load variations. Used in power supply outputs and internal power rails.",
         "manufacturer": "Linear Technology (Analog Devices)",
+        "category": "power",
         "used_in": ["dev_006"],
     },
     {
@@ -118,6 +123,7 @@ COMPONENTS = [
         "name": "High-Speed Comparator",
         "description": "Compares two voltages and outputs a digital signal indicating which is larger. Used in triggering circuits of oscilloscopes.",
         "manufacturer": "Maxim Integrated (Analog Devices)",
+        "category": "signal_processing",
         "used_in": ["dev_002", "dev_003", "dev_004"],
     },
     {
@@ -125,6 +131,7 @@ COMPONENTS = [
         "name": "RF Mixer",
         "description": "Shifts signal frequencies by combining two signals. Essential in spectrum analyzers and signal analyzers for frequency down-conversion.",
         "manufacturer": "Mini-Circuits",
+        "category": "rf",
         "used_in": ["dev_008"],
     },
     {
@@ -132,6 +139,7 @@ COMPONENTS = [
         "name": "Current Shunt Resistor",
         "description": "Precision low-resistance resistor used to measure current by sampling the voltage drop across it.",
         "manufacturer": "Vishay",
+        "category": "measurement",
         "used_in": ["dev_001", "dev_006", "dev_009", "dev_010"],
     },
     {
@@ -139,6 +147,7 @@ COMPONENTS = [
         "name": "TCXO (Temperature-Compensated Crystal Oscillator)",
         "description": "Provides a stable reference clock frequency over a wide temperature range. Ensures timing accuracy in measurement instruments.",
         "manufacturer": "Vectron International",
+        "category": "timing",
         "used_in": ["dev_002", "dev_003", "dev_004", "dev_005", "dev_008"],
     },
     {
@@ -146,6 +155,7 @@ COMPONENTS = [
         "name": "Input Protection Network",
         "description": "TVS diodes and series resistors at measurement inputs that protect against overvoltage, ESD, and transient spikes.",
         "manufacturer": "Bourns",
+        "category": "protection",
         "used_in": ["dev_001", "dev_002", "dev_003", "dev_004", "dev_007", "dev_009"],
     },
 ]
