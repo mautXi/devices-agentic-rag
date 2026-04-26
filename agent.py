@@ -18,6 +18,19 @@ from openai import OpenAI
 VLLM_BASE_URL = os.getenv("VLLM_BASE_URL", "http://localhost:8080/v1")
 AGENT_MAX_STEPS = int(os.getenv("AGENT_MAX_STEPS", "6"))
 
+REWRITE_PROMPT = """You are a query optimizer for a measuring and test equipment knowledge base.
+
+Rewrite the user query to be clearer and more specific:
+- Expand model numbers to full device names where recognizable (e.g. "Fluke 87V" → "Fluke 87V Multimeter")
+- Make implicit intent explicit (e.g. "what's inside it?" → "what components does [device] contain?")
+- Resolve vague pronouns if the device or component is clear from the query
+- Do not add speculation or information not present in the query
+
+If the query is already clear and specific, return it unchanged.
+Return ONLY the rewritten query — no explanation, no punctuation changes.
+
+Query: {query}"""
+
 SYSTEM_PROMPT = """You are an expert assistant for measuring and test equipment.
 
 STRICT RULES — follow these without exception:
@@ -48,21 +61,22 @@ class Agent:
         self._verify_connection()
         self._memory = MemorySaver()
 
-        llm = ChatOpenAI(
+        self._llm = ChatOpenAI(
             base_url=VLLM_BASE_URL,
             api_key="vllm",
             model=model,
             temperature=0,
         )
-        self._graph = create_react_agent(llm, tools, checkpointer=self._memory)
+        self._graph = create_react_agent(self._llm, tools, checkpointer=self._memory)
 
     def run(self, user_query: str, thread_id: str = "default") -> tuple[str, list[str]]:
         """Run the agent and return (final_answer, steps)."""
-        print(f"\n[Agent] Query: {user_query}")
+        query = self._rewrite_query(user_query)
+        print(f"\n[Agent] Query: {query}")
         print("-" * 60)
 
         result = self._graph.invoke(
-            {"messages": self._build_messages(user_query, thread_id)},
+            {"messages": self._build_messages(query, thread_id)},
             config=self._get_config(thread_id),
         )
 
@@ -74,9 +88,13 @@ class Agent:
         return answer, self._extract_steps(messages)
 
     def stream_run(self, user_query: str, thread_id: str = "default"):
-        """Yields ('step', step_str) as tools are called and ('token', token_str) for the final answer."""
+        """Yields ('rewrite', query), ('step', step_str), and ('token', token_str) events."""
+        query = self._rewrite_query(user_query)
+        if query != user_query:
+            yield ("rewrite", query)
+
         for chunk, _ in self._graph.stream(
-            {"messages": self._build_messages(user_query, thread_id)},
+            {"messages": self._build_messages(query, thread_id)},
             config=self._get_config(thread_id),
             stream_mode="messages",
         ):
@@ -110,6 +128,14 @@ class Agent:
                     )
                     steps.append(f"Tool: {tc['name']}\nInput: {tc['args']}\n\nResult:\n{result}")
         return steps
+
+    def _rewrite_query(self, user_query: str) -> str:
+        prompt = REWRITE_PROMPT.format(query=user_query)
+        result = self._llm.invoke([HumanMessage(content=prompt)])
+        rewritten = result.content.strip()
+        if rewritten:
+            print(f"[Agent] Rewritten query: {rewritten}")
+        return rewritten or user_query
 
     def _verify_connection(self, retries: int = 60, delay: float = 10.0):
         print(f"[Agent] Waiting for vLLM at {VLLM_BASE_URL}...")

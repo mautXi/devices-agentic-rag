@@ -45,6 +45,8 @@ for entry in st.session_state.history:
     with st.chat_message("user"):
         st.write(entry["query"])
     with st.chat_message("assistant"):
+        if entry.get("rewritten_query"):
+            st.caption(f"Interpreted as: *{entry['rewritten_query']}*")
         if entry["steps"]:
             with st.expander(f"Tools used ({len(entry['steps'])})"):
                 for i, step in enumerate(entry["steps"], 1):
@@ -63,9 +65,14 @@ if query := st.chat_input("Ask about a measuring device or component..."):
 
         collected_steps = []
         answer_tokens = []
+        rewritten_query = None
+        rewrite_placeholder = st.empty()
 
         for event_type, data in agent.stream_run(query, st.session_state.thread_id):
-            if event_type == "step":
+            if event_type == "rewrite":
+                rewritten_query = data
+                rewrite_placeholder.caption(f"Interpreted as: *{data}*")
+            elif event_type == "step":
                 collected_steps.append(data)
                 with steps_placeholder.container():
                     with st.expander(f"Tools used ({len(collected_steps)})"):
@@ -82,6 +89,7 @@ if query := st.chat_input("Ask about a measuring device or component..."):
 
     st.session_state.history.append({
         "query": query,
+        "rewritten_query": rewritten_query,
         "answer": answer,
         "steps": collected_steps,
     })
