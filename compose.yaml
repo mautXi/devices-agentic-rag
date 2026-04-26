@@ -26,6 +26,9 @@ services:
       - devices-net
     ports:
       - "8000:8000"
+    environment:
+      CHROMA_SERVER_AUTHN_PROVIDER: "chromadb.auth.token_authn.TokenAuthenticationServerProvider"
+      CHROMA_SERVER_AUTHN_CREDENTIALS: ${CHROMA_TOKEN}
     volumes:
       - chroma_data:/chroma/chroma
     healthcheck:
@@ -95,6 +98,7 @@ services:
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
       CHROMA_HOST: chromadb
       CHROMA_PORT: "8000"
+      CHROMA_TOKEN: ${CHROMA_TOKEN}
       VLLM_BASE_URL: http://vllm:8000/v1
       VLLM_MODEL: Qwen/Qwen2.5-3B-Instruct
       AGENT_MAX_STEPS: "6"

@@ -4,9 +4,10 @@ Tool 2: Vector Store for semantic device search.
 Uses ChromaDB (HTTP client → container) and sentence-transformers for embeddings.
 Stores device name + description and supports semantic similarity search.
 
-Connection settings are read from env vars with sensible defaults:
-  CHROMA_HOST  (default: localhost)
-  CHROMA_PORT  (default: 8000)
+Connection settings are read from env vars (set in .env):
+  CHROMA_HOST   (default: localhost)
+  CHROMA_PORT   (default: 8000)
+  CHROMA_TOKEN  (required)
 """
 
 import json
@@ -14,6 +15,7 @@ import os
 import time
 
 import chromadb
+from chromadb.config import Settings
 from langchain_core.tools import StructuredTool
 from sentence_transformers import SentenceTransformer
 
@@ -23,9 +25,9 @@ from data.sample_data import DEVICES
 COLLECTION_NAME = "measuring_devices"
 EMBED_MODEL = "all-MiniLM-L6-v2"
 
-# Env vars for ChromaDB connection; if not set, defaults assume local container setup with podman-compose
 CHROMA_HOST = os.getenv("CHROMA_HOST", "localhost")
 CHROMA_PORT = int(os.getenv("CHROMA_PORT", "8000"))
+CHROMA_TOKEN = os.environ["CHROMA_TOKEN"]
 
 
 class VectorStoreTool:
@@ -49,7 +51,14 @@ class VectorStoreTool:
     def _connect(self, retries: int, delay: float) -> chromadb.HttpClient:
         for attempt in range(1, retries + 1):
             try:
-                client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)
+                client = chromadb.HttpClient(
+                    host=CHROMA_HOST,
+                    port=CHROMA_PORT,
+                    settings=Settings(
+                        chroma_client_auth_provider="chromadb.auth.token_authn.TokenAuthClientProvider",
+                        chroma_client_auth_credentials=CHROMA_TOKEN,
+                    ),
+                )
                 client.heartbeat()
                 print(f"[VectorStore] Connected to ChromaDB at {CHROMA_HOST}:{CHROMA_PORT}.")
                 return client
