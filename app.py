@@ -8,6 +8,7 @@ load_dotenv()
 import streamlit as st
 
 from agent import Agent
+from data.sample_data import DEVICES
 from tools.hybrid_search import HybridSearchTool
 from tools.knowledge_graph import KnowledgeGraphTool
 from tools.vector_store import VectorStoreTool
@@ -34,6 +35,17 @@ st.caption("Ask about devices, components, manufacturers, or use cases.")
 
 agent = load_agent()
 
+with st.sidebar:
+    st.header("Filter by device")
+    device_names = [d["name"] for d in sorted(DEVICES, key=lambda d: d["name"])]
+    selected_device = st.selectbox(
+        "Device context",
+        options=["— All devices —"] + device_names,
+        label_visibility="collapsed",
+    )
+    if selected_device != "— All devices —":
+        st.caption(f"Questions will be scoped to **{selected_device}**.")
+
 if "history" not in st.session_state:
     st.session_state.history = []
 
@@ -44,6 +56,8 @@ if "thread_id" not in st.session_state:
 for entry in st.session_state.history:
     with st.chat_message("user"):
         st.write(entry["query"])
+        if entry.get("device_filter"):
+            st.caption(f"Device: *{entry['device_filter']}*")
     with st.chat_message("assistant"):
         if entry.get("rewritten_query"):
             st.caption(f"Interpreted as: *{entry['rewritten_query']}*")
@@ -58,6 +72,14 @@ for entry in st.session_state.history:
 if query := st.chat_input("Ask about a measuring device or component..."):
     with st.chat_message("user"):
         st.write(query)
+        if selected_device != "— All devices —":
+            st.caption(f"Device: *{selected_device}*")
+
+    effective_query = (
+        f"Regarding the {selected_device}: {query}"
+        if selected_device != "— All devices —"
+        else query
+    )
 
     with st.chat_message("assistant"):
         steps_placeholder = st.empty()
@@ -68,7 +90,7 @@ if query := st.chat_input("Ask about a measuring device or component..."):
         rewritten_query = None
         rewrite_placeholder = st.empty()
 
-        for event_type, data in agent.stream_run(query, st.session_state.thread_id):
+        for event_type, data in agent.stream_run(effective_query, st.session_state.thread_id):
             if event_type == "rewrite":
                 rewritten_query = data
                 rewrite_placeholder.caption(f"Interpreted as: *{data}*")
@@ -89,6 +111,7 @@ if query := st.chat_input("Ask about a measuring device or component..."):
 
     st.session_state.history.append({
         "query": query,
+        "device_filter": selected_device if selected_device != "— All devices —" else None,
         "rewritten_query": rewritten_query,
         "answer": answer,
         "steps": collected_steps,
