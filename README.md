@@ -2,6 +2,8 @@
 
 > Ask plain questions about your test equipment and get instant, reasoned answers.
 
+![App screenshot](docs/app.png)
+
 ---
 
 ## What does it do?
