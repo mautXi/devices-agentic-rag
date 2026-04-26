@@ -23,7 +23,7 @@ No search engines, no manual browsing, no spreadsheets. Just a question and an a
 
 ## Business value
 
-Knowledge about test equipment is usually scattered, locked in datasheets, spreadsheets, email threads, and the heads of experienced engineers. When someone leaves, that knowledge walks out the door. When someone new joins, they spend weeks getting up to speed. When a decision needs to be made quickly, the right information is hard to find.
+Knowledge about test equipment is usually scattered, locked in spreadsheets, email threads, and the heads of experienced engineers. When someone leaves, that knowledge walks out the door. When someone new joins, they spend weeks getting up to speed. When a decision needs to be made quickly, the right information is hard to find.
 
 This system changes that. It makes your device fleet knowledge **available to everyone, instantly**, regardless of their technical background.
 
@@ -36,12 +36,12 @@ This system changes that. It makes your device fleet knowledge **available to ev
 ### For procurement and supply chain
 
 - Instantly see which devices depend on a specific component or manufacturer
-- Assess supplier risk: *"How many of our devices rely on Xilinx FPGAs?"*
-- Support sourcing decisions with accurate, up-to-date inventory data without needing to request a report from engineering
+- Assess supplier risk: *"How many of our devices rely on <Device X>?"*
+- Support sourcing decisions with accurate, up-to-date inventory data.
 
 ### For quality and compliance
 
-- Trace component usage across the entire device fleet in seconds
+- Trace component usage across the entire device spectrum
 - Identify affected devices when a component has a known issue or recall
 - Document what's in each device without manual audits
 
@@ -93,7 +93,7 @@ This system changes that. It makes your device fleet knowledge **available to ev
                                  ▼
   ┌────────────────────────────────────────────────────────────────┐
   │                         Your Answer                            │
-  │           + the reasoning steps that led to it                │
+  │           + the reasoning steps that led to it                 │
   └────────────────────────────────────────────────────────────────┘
 ```
 
@@ -101,7 +101,7 @@ The agent has three ways to look things up:
 
 - **Knowledge Graph**: A structured map of every device and its parts in Neo4j. Great for precise questions like *"which devices share this chip?"*, *"what category does this component belong to?"*, or *"who manufactures the ADC?"*
 - **Semantic Search**: ChromaDB with sentence-transformer embeddings understands the *intent* behind a question. Great for open-ended queries like *"what device should I use for RF work?"*
-- **Hybrid Search**: Combines both — finds semantically relevant devices and enriches each result with its full component data in a single call. Best for complex multi-part queries.
+- **Hybrid Search** (Combines both): Finds semantically relevant devices and enriches each result with its full component data in a single call. Best for complex multi-part queries.
 
 The agent picks the right approach automatically, and you can always see its reasoning steps in the UI.
 
@@ -120,7 +120,6 @@ The agent picks the right approach automatically, and you can always see its rea
 
 **Learn about a component**
 - Who manufactures the ADC (Analog-to-Digital Converter)?
-- What signal processing components do we have?
 
 **Follow-up questions (conversation memory)**
 - Tell me about the Fluke 87V. *(then)* What category are its components?
@@ -137,7 +136,7 @@ The agent picks the right approach automatically, and you can always see its rea
 cp .env.template .env
 ```
 
-Edit `.env` and set your HuggingFace token (`HF_TOKEN`). A free account is enough — get a token at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
+Edit `.env` and set your HuggingFace token (`HF_TOKEN`). A free account is enough to get a token at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
 
 **2. Start all services**
 
@@ -145,7 +144,7 @@ Edit `.env` and set your HuggingFace token (`HF_TOKEN`). A free account is enoug
 podman-compose up -d
 ```
 
-This starts vLLM (LLM inference), Neo4j (knowledge graph), ChromaDB (vector store), and the Streamlit app. On the **first run**, the model (`Qwen/Qwen2.5-3B-Instruct`) is downloaded into a named volume — allow a few minutes. Subsequent starts are fast since the model is cached.
+This starts vLLM (LLM inference), Neo4j (knowledge graph), ChromaDB (vector store), and the Streamlit app. On the **first run**, the model (`Qwen/Qwen2.5-3B-Instruct`) is downloaded into a named volume which can take a few minutes. Subsequent starts are fast since the model is cached.
 
 > **Note:** vLLM performs best with a GPU. CPU-only is supported but inference will be slower.
 
