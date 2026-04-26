@@ -46,9 +46,9 @@ for entry in st.session_state.history:
         st.write(entry["query"])
     with st.chat_message("assistant"):
         if entry["steps"]:
-            with st.expander(f"Reasoning ({len(entry['steps'])} step{'s' if len(entry['steps']) > 1 else ''})"):
+            with st.expander(f"Tools used ({len(entry['steps'])})"):
                 for i, step in enumerate(entry["steps"], 1):
-                    st.markdown(f"**Step {i}**")
+                    st.markdown(f"**Tool {i}**")
                     st.code(step, language=None)
         st.write(entry["answer"])
 
@@ -68,10 +68,9 @@ if query := st.chat_input("Ask about a measuring device or component..."):
             if event_type == "step":
                 collected_steps.append(data)
                 with steps_placeholder.container():
-                    label = f"Reasoning ({len(collected_steps)} step{'s' if len(collected_steps) > 1 else ''})"
-                    with st.expander(label):
+                    with st.expander(f"Tools used ({len(collected_steps)})"):
                         for i, s in enumerate(collected_steps, 1):
-                            st.markdown(f"**Step {i}**")
+                            st.markdown(f"**Tool {i}**")
                             st.code(s, language=None)
             elif event_type == "token":
                 answer_tokens.append(data)
