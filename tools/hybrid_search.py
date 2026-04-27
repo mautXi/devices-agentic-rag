@@ -1,10 +1,3 @@
-"""
-Tool 3: Hybrid search combining semantic vector search with knowledge graph enrichment.
-
-Finds devices by meaning/purpose, then enriches each result with its component data
-from the knowledge graph — giving a complete picture in a single tool call.
-"""
-
 import json
 
 from langchain_core.tools import StructuredTool
@@ -31,7 +24,6 @@ class HybridSearchTool:
         ]
 
     def hybrid_search(self, query: str, top_k: int = 3) -> str:
-        """Semantic search enriched with component data from the knowledge graph."""
         vs_result = json.loads(self.vs.search(query, top_k))
         enriched = []
         for device in vs_result.get("results", []):

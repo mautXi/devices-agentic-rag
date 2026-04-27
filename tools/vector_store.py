@@ -1,15 +1,3 @@
-"""
-Tool 2: Vector Store for semantic device search.
-
-Uses ChromaDB (HTTP client → container) and sentence-transformers for embeddings.
-Stores device name + description and supports semantic similarity search.
-
-Connection settings are read from env vars (set in .env):
-  CHROMA_HOST   (default: localhost)
-  CHROMA_PORT   (default: 8000)
-  CHROMA_TOKEN  (required)
-"""
-
 import json
 import os
 import time
@@ -104,7 +92,6 @@ class VectorStoreTool:
         ]
 
     def search(self, query: str, top_k: int = 3) -> str:
-        """Semantic search — returns top_k most relevant devices."""
         query_embedding = self.embedder.encode([query]).tolist()
         results = self.collection.query(
             query_embeddings=query_embedding,
@@ -125,7 +112,6 @@ class VectorStoreTool:
         return json.dumps({"query": query, "results": hits})
 
     def get_device_by_name(self, name: str) -> str:
-        """Fetch a device by exact or partial name match."""
         all_results = self.collection.get(include=["documents", "metadatas"])
         matches = []
         name_lower = name.lower()

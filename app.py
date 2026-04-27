@@ -77,11 +77,11 @@ if query := st.chat_input("Ask about a measuring device or component..."):
     )
 
     with st.chat_message("assistant"):
+        rewrite_placeholder = st.empty()
         answer_placeholder = st.empty()
 
         answer_tokens = []
         rewritten_query = None
-        rewrite_placeholder = st.empty()
 
         for event_type, data in agent.stream_run(effective_query, st.session_state.thread_id):
             if event_type == "rewrite":

@@ -1,7 +1,3 @@
-"""
-Sample data for the measuring devices RAG system.
-"""
-
 DEVICES = [
     {
         "id": "dev_001",

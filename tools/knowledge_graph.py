@@ -1,17 +1,3 @@
-"""
-Tool 1: Knowledge Graph for device components backed by Neo4j.
-
-Graph schema:
-  (:Device  {id, name, category})
-  (:Component {id, name, description, manufacturer})
-  (:Device)-[:USES]->(:Component)
-
-Connection settings are read from env vars (set in .env):
-  NEO4J_URI      (required)
-  NEO4J_USER     (required)
-  NEO4J_PASSWORD (required)
-"""
-
 import json
 import os
 import time
