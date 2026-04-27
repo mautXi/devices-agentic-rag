@@ -40,10 +40,10 @@ with st.sidebar:
     device_names = [d["name"] for d in sorted(DEVICES, key=lambda d: d["name"])]
     selected_device = st.selectbox(
         "Device context",
-        options=["— All devices —"] + device_names,
+        options=["All devices"] + device_names,
         label_visibility="collapsed",
     )
-    if selected_device != "— All devices —":
+    if selected_device != "All devices":
         st.caption(f"Questions will be scoped to **{selected_device}**.")
 
 if "history" not in st.session_state:
@@ -72,12 +72,12 @@ for entry in st.session_state.history:
 if query := st.chat_input("Ask about a measuring device or component..."):
     with st.chat_message("user"):
         st.write(query)
-        if selected_device != "— All devices —":
+        if selected_device != "All devices":
             st.caption(f"Device: *{selected_device}*")
 
     effective_query = (
         f"Regarding the {selected_device}: {query}"
-        if selected_device != "— All devices —"
+        if selected_device != "All devices"
         else query
     )
 
@@ -111,7 +111,7 @@ if query := st.chat_input("Ask about a measuring device or component..."):
 
     st.session_state.history.append({
         "query": query,
-        "device_filter": selected_device if selected_device != "— All devices —" else None,
+        "device_filter": selected_device if selected_device != "All devices" else None,
         "rewritten_query": rewritten_query,
         "answer": answer,
         "steps": collected_steps,
