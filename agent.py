@@ -4,7 +4,7 @@ import time
 from langchain_core.messages import AIMessageChunk, HumanMessage, SystemMessage, ToolMessage
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
-from langchain.agents import create_react_agent
+from langgraph.prebuilt import create_react_agent
 from openai import OpenAI
 
 
