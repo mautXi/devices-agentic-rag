@@ -61,11 +61,6 @@ for entry in st.session_state.history:
     with st.chat_message("assistant"):
         if entry.get("rewritten_query"):
             st.caption(f"Interpreted as: *{entry['rewritten_query']}*")
-        if entry["steps"]:
-            with st.expander(f"Tools used ({len(entry['steps'])})"):
-                for i, step in enumerate(entry["steps"], 1):
-                    st.markdown(f"**Tool {i}**")
-                    st.code(step, language=None)
         st.write(entry["answer"])
 
 # Chat input
@@ -82,10 +77,8 @@ if query := st.chat_input("Ask about a measuring device or component..."):
     )
 
     with st.chat_message("assistant"):
-        steps_placeholder = st.empty()
         answer_placeholder = st.empty()
 
-        collected_steps = []
         answer_tokens = []
         rewritten_query = None
         rewrite_placeholder = st.empty()
@@ -95,12 +88,7 @@ if query := st.chat_input("Ask about a measuring device or component..."):
                 rewritten_query = data
                 rewrite_placeholder.caption(f"Interpreted as: *{data}*")
             elif event_type == "step":
-                collected_steps.append(data)
-                with steps_placeholder.container():
-                    with st.expander(f"Tools used ({len(collected_steps)})"):
-                        for i, s in enumerate(collected_steps, 1):
-                            st.markdown(f"**Tool {i}**")
-                            st.code(s, language=None)
+                print(data)
             elif event_type == "token":
                 answer_tokens.append(data)
                 answer_placeholder.markdown("".join(answer_tokens))
@@ -114,5 +102,4 @@ if query := st.chat_input("Ask about a measuring device or component..."):
         "device_filter": selected_device if selected_device != "All devices" else None,
         "rewritten_query": rewritten_query,
         "answer": answer,
-        "steps": collected_steps,
     })
