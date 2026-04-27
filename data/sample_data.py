@@ -1,3 +1,5 @@
+# Sample data generated with Claude (claude.ai)
+
 DEVICES = [
     {
         "id": "dev_001",
