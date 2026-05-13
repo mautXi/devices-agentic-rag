@@ -72,7 +72,7 @@ This system changes that. It makes your device fleet knowledge **available to ev
                                  │
                                  ▼
   ┌───────────────────────────────────────────────────────────────┐
-  │               LangGraph ReAct Agent  (Qwen 2.5 via vLLM)      │
+  │           LangGraph ReAct Agent  (Qwen 2.5 via llama.cpp)     │
   │                                                               │
   │  • Up to 6 reasoning steps before answering                   │
   │  • Conversation memory across turns (per session)             │
@@ -111,9 +111,6 @@ The agent picks the right approach automatically, and you can always see its rea
 
 ## Example questions
 
-**Find devices by component**
-- Which devices have the component RF Mixer?
-
 **Find components for a device**
 - What components does the Fluke 87V Multimeter use?
 
@@ -146,9 +143,7 @@ Edit `.env` and set your HuggingFace token (`HF_TOKEN`). A free account is enoug
 podman-compose up -d
 ```
 
-This starts vLLM (LLM inference), Neo4j (knowledge graph), ChromaDB (vector store), and the Streamlit app. On the **first run**, the model (`Qwen/Qwen2.5-3B-Instruct`) is downloaded into a named volume which can take a few minutes. Subsequent starts are fast since the model is cached.
-
-> **Note:** vLLM performs best with a GPU. CPU-only is supported but inference will be slower.
+This starts llama.cpp (LLM inference), Neo4j (knowledge graph), ChromaDB (vector store), and the Streamlit app. On the **first run**, the model (`Qwen2.5-3B-Instruct-Q4_K_M.gguf`) is downloaded into a named volume which can take a few minutes. Subsequent starts are fast since the model is cached.
 
 **3. Open the app**
 
@@ -168,7 +163,7 @@ podman-compose down -v
 
 ---
 
-*Built with [vLLM](https://docs.vllm.ai), [LangGraph](https://langchain-ai.github.io/langgraph/), [LangChain](https://python.langchain.com), [Neo4j](https://neo4j.com), [ChromaDB](https://www.trychroma.com), and [Streamlit](https://streamlit.io).*
+*Built with [llama.cpp](https://github.com/ggml-org/llama.cpp), [LangGraph](https://langchain-ai.github.io/langgraph/), [LangChain](https://python.langchain.com), [Neo4j](https://neo4j.com), [ChromaDB](https://www.trychroma.com), and [Streamlit](https://streamlit.io).*
 
 ---
 

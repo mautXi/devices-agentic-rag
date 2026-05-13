@@ -8,7 +8,7 @@ from langgraph.prebuilt import create_react_agent
 from openai import OpenAI
 
 
-VLLM_BASE_URL = os.getenv("VLLM_BASE_URL", "http://localhost:8080/v1")
+LLM_BASE_URL = os.getenv("LLM_BASE_URL", "http://localhost:8080/v1")
 AGENT_MAX_STEPS = int(os.getenv("AGENT_MAX_STEPS", "6"))
 
 REWRITE_PROMPT = """You are a query optimizer for a measuring and test equipment knowledge base.
@@ -55,8 +55,8 @@ class Agent:
         self._memory = MemorySaver()
 
         self._llm = ChatOpenAI(
-            base_url=VLLM_BASE_URL,
-            api_key="vllm",
+            base_url=LLM_BASE_URL,
+            api_key="llama-cpp",
             model=model,
             temperature=0,
         )
@@ -101,19 +101,19 @@ class Agent:
         return rewritten or user_query
 
     def _verify_connection(self, retries: int = 60, delay: float = 10.0):
-        print(f"[Agent] Waiting for vLLM at {VLLM_BASE_URL}...")
-        client = OpenAI(base_url=VLLM_BASE_URL, api_key="vllm")
+        print(f"[Agent] Waiting for llama.cpp at {LLM_BASE_URL}...")
+        client = OpenAI(base_url=LLM_BASE_URL, api_key="llama-cpp")
         for attempt in range(1, retries + 1):
             try:
                 models = client.models.list()
                 if models.data:
-                    print(f"[Agent] vLLM ready (model: {models.data[0].id}).")
+                    print(f"[Agent] llama.cpp ready (model: {models.data[0].id}).")
                     return
             except Exception:
                 pass
-            print(f"[Agent] vLLM not ready yet ({attempt}/{retries}), retrying in {int(delay)}s...")
+            print(f"[Agent] llama.cpp not ready yet ({attempt}/{retries}), retrying in {int(delay)}s...")
             time.sleep(delay)
         raise RuntimeError(
-            f"vLLM not reachable at {VLLM_BASE_URL} after {retries} attempts.\n"
+            f"llama.cpp not reachable at {LLM_BASE_URL} after {retries} attempts.\n"
             "Start the containers with:  podman-compose up -d"
         )

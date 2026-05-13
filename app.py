@@ -13,7 +13,7 @@ from tools.hybrid_search import HybridSearchTool
 from tools.knowledge_graph import KnowledgeGraphTool
 from tools.vector_store import VectorStoreTool
 
-MODEL = os.getenv("VLLM_MODEL", "Qwen/Qwen2.5-3B-Instruct")
+MODEL = os.getenv("LLM_MODEL", "Qwen/Qwen2.5-3B-Instruct")
 
 st.set_page_config(
     page_title="Measuring Devices Assistant",
